@@ -1,0 +1,63 @@
+---
+title: "rStrava"
+date: "Monday, October 06, 2014"
+output: html_document
+---
+
+Welcome to the rStrava tutorial.  The rStrava package is designed to access Strava data through HTML parsing or using the Strava APIv3.  The following provides some examples of how to access the data.  The package is currently in development and is a collaborate project between <a href"https://github.com/fawda123">fawda123</a> and <a href="https://github.com/ptdrow">ptdrow</a>.  Please visit the <a href="https://github.com/fawda123/rStrava/">repository</a> to access the functions. Information on the Strava API can be found <a href="http://strava.github.io/api/">here</a>.
+
+Functions are available for accessing data without OAUTH2 authentication.
+```{r eval=F}
+######
+# access data without authentication
+
+# athlete data
+athl_fun('2837007')
+
+```
+
+Most of the package uses the data retrieval services on the Strava APIv3, which requires OAUTH2 authentication.
+```{r eval=F}
+######
+# test api functions
+
+# get authentication token to access functions
+# 'app_name', 'id', 'secret' were assigned to me
+# users will have to get their own values by registering an app on strava
+# visit http://www.strava.com/developers, http://strava.github.io/api/
+
+##
+# create oath token
+# 'mytoken' created using 'strava_oauth' function and user-specific access id, secrete
+
+## mytoken <- strava_oauth(app_name, app_client_id, app_secret)
+
+stoken <- config(token = mytoken)
+
+# setup info for rate-limiter
+usage_left <- as.integer(c(600, 30000))
+
+# get basic user info
+get_basic('https://strava.com/api/v3/athlete', stoken)
+```
+
+Get some data about another athlete:
+```{r eval=F}
+# get data for another athlete
+get_athlete(stoken, '2527465')
+```
+
+Get information on your followers:
+```{r eval=F}
+# get following
+get_following('followers', stoken, '2837007')
+```
+
+Get a comprehensive list of your activities:
+```{r eval=F}
+# get activities (mine)
+tmp <- get_activity_list(stoken)
+head(tmp)
+```
+
+More to come...
