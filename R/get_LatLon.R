@@ -3,18 +3,26 @@
 #' get latitude and longitude from Google polyline 
 #' 
 #' @param x the dataframe that contains the Strava activity data
-#' @param .id_col the column that you want to be used as an identifier for the dataframe of latitude and longitude coordinates
 #' @author Daniel Padfield
-#' @details used internally in \code{\link{get_all_LatLon}}
 #' @concept token
 #' @return dataframe of latitude and longitudes with a column for the unique identifier
 #' @examples
 #' \dontrun{
-#' getLatLon(act, 'upload_id')
+#' stoken <- httr::config(token = strava_oauth(app_name, app_client_id, app_secret, cache = TRUE))
+#' 
+#' my_acts <- get_activity_list(stoken)
+#' acts_data <- compile_activities(my_acts)
+#' 
+#' # get lat and lon for a single activity
+#' get_latlon(acts_data[1,])
 #' }
 #' @export
-get_LatLon <- function(x, .id_col){
-	y <- decode_Polyline(x$map.summary_polyline)
-	y[,.id_col] <- unique(x[,.id_col])
+get_latlon <- function(x){
+	if('map.summary_polyline' %in% names(x)){y <- decode_Polyline(x$map.summary_polyline)}
+	if('map.polyline' %in% names(x)){y <- decode_Polyline(x$map.polyline)}
+	
+	y <- tidyr::separate(y, latlon, c('lat', 'lon'), sep = ',')
+	y <- dplyr::mutate_at(y, c('lat', 'lon'), as.numeric)
+	
 	return(y)
 }

@@ -3,18 +3,18 @@ output:
   html_document:
     keep_md: yes
     toc: no
-    self_contained: no
-  pdf_document:
-    toc: yes
+    self_contained: yes
 ---
 
 # rStrava
 
-##### *Marcus W. Beck, mbafs2012@gmail.com, Pedro Villarroel, pedrodvf@gmail.com, Daniel Padfield, dp323@exeter.ac.uk*
+##### *Marcus W. Beck, mbafs2012@gmail.com, Pedro Villarroel, pedrodvf@gmail.com, Daniel Padfield, dp323@exeter.ac.uk, Lorenzo Gaborini, lorenzo.gaborini@unil.ch*
 
 Linux: [![Travis-CI Build Status](https://travis-ci.org/fawda123/rStrava.svg?branch=master)](https://travis-ci.org/fawda123/rStrava)
 
 Windows: [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/fawda123/rStrava?branch=master)](https://ci.appveyor.com/project/fawda123/rStrava)
+
+[![DOI](https://zenodo.org/badge/23404183.svg)](https://zenodo.org/badge/latestdoi/23404183)
 
 ![](api_logo_pwrdBy_strava_horiz_light.png)
 
@@ -33,25 +33,27 @@ Please report any issues and suggestions on the [issues link](https://github.com
 
 ### Package overview
 
-The functions are in three categories depending on mode of use.  The first category of functions scrape data from the public Strava website and the second category uses the API functions or relies on data from the API functions.  The second category requires an authentication token.  The help files for each category can be viewed using ```help.search```:
+The functions are in two categories depending on mode of use.  The first category of functions scrape data from the public Strava website and the second category uses the API functions or relies on data from the API functions.  The second category requires an authentication token.  The help files for each category can be viewed using ```help.search```:
 
 ```{r eval = F}
 help.search('notoken', package = 'rStrava')
 help.search('token', package = 'rStrava')
 ```
 
-#### Scraping functions (no token)
+### Scraping functions (no token)
 
 An example using the scraping functions:
 ```{r echo = FALSE, message = FALSE, cache = F}
 devtools::load_all('.')
 ```
 ```{r message = FALSE}
-# get athlete data for these guys
-athl_fun(c(2837007, 2527465, 2140248), trace = FALSE)
+# get athlete data 
+athl_fun(2837007, trace = FALSE)
 ```
 
-#### API functions (token)
+### API functions (token)
+
+#### Setup 
 
 These functions require a Strava account and a personal API, both of which can be obtained on the Strava website.  The user account can be created by following instructions on the [Strava homepage](https://www.strava.com/).  After the account is created, a personal API can be created under API tab of [profile settings](https://www.strava.com/settings/api).  The user must have an application name (chosen by the user), client id (different from the athlete id), and an application secret to create the authentication token.  Additional information about the personal API can be found [here](https://strava.github.io/api/).  Every API retrieval function in the rStrava package requires an authentication token (called `stoken` in the help documents).  The following is a suggested workflow for using the API functions with rStrava.
 
@@ -65,7 +67,26 @@ app_secret <- 'xxxxxxxx' # an alphanumeric secret, assigned by Strava
 stoken <- httr::config(token = strava_oauth(app_name, app_client_id, app_secret))
 ```
 
-The API retrieval functions can be used after the token is created.
+Setting `cache = TRUE` for `strava_oauth` will create an authentication file in the working directory. This can be used in later sessions as follows:
+```{r, eval = FALSE}
+stoken <- httr::config(token = readRDS('.httr-oauth')[[1]])
+```
+
+Finally, the `get_heat_map` and `get_elev_prof` functions optionally retrieve elevation data from the Google Maps Elevation API. To use these features, an additional authentication key is required.  Follow the instructions [here](https://developers.google.com/maps/documentation/elevation/#api_key).  The key can be added to the R environment file for later use:
+
+```{r eval = FALSE}
+# save the key, do only once
+cat("google_key=XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n",
+    file=file.path(normalizePath("~/"), ".Renviron"),
+    append=TRUE)
+
+# retrieve the key, restart R if not found
+mykey <- Sys.getenv("google_key")
+```
+
+#### Using the functions
+
+The API retrieval functions are used with the token.
 ```{r echo = FALSE, message = FALSE}
 source('extra.R')
 ```
@@ -79,16 +100,16 @@ An example creating a heat map of activities:
 # get activities, get activities by location, plot
 my_acts <- get_activity_list(stoken)
 acts <- lapply(my_acts, function(x) x$location_city) %in% c('Pensacola', 'Pensacola Beach', 'Milton') 
-get_heat_map(my_acts, acts = which(acts), source = 'osm', col = 'darkgreen', size = 2)
+get_heat_map(my_acts, acts = which(acts), col = 'darkgreen', size = 2, dist = F, f = 0.5)
 ```
 
 Plotting elevation and grade for a single ride:
 ```{r}
 # plot elevation along a single ride
-get_heat_map(my_acts, acts = 1, alpha = 1, add_elev = T, f = 0.1, key = mykey, size = 2, col = 'Spectral', maptype = 'satellite', units = 'imperial')
+get_heat_map(my_acts, acts = 1, alpha = 1, add_elev = T, f = 0.3, key = mykey, size = 2, col = 'Spectral', maptype = 'satellite', units = 'imperial')
 
 # plot % gradient along a single ride
-get_heat_map(my_acts, acts = 1, alpha = 1, add_elev = T, f = 0.1, as_grad = T, key = mykey, size = 2, col = 'Spectral', expand = 5, maptype = 'satellite', units = 'imperial')
+get_heat_map(my_acts, acts = 1, alpha = 1, add_elev = T, f = 0.3, as_grad = T, key = mykey, size = 2, col = 'Spectral', expand = 5, maptype = 'satellite', units = 'imperial')
 ```
 
 Get elevation profiles for activities:
@@ -99,6 +120,29 @@ my_acts <- get_activity_list(stoken)
 get_elev_prof(my_acts, acts = 1, key = mykey, units = 'imperial')
 get_elev_prof(my_acts, acts = 1, key = mykey, units = 'imperial', total = T)
 ```  
+
+Plot average speed per split (km or mile) for an activity:
+```{r message = F, fig.height = 3, fig.width = 9, cache = TRUE}
+# plots for most recent activity
+plot_spdsplits(my_acts, stoken, acts = 1, units = 'imperial')
+```
+
+Additional functions are provided to get "stream" information for individual activities.  Streams provide detailed information about location, time, speed, elevation, gradient, cadence, watts, temperature, and moving status (yes/no) for an individual activity.
+
+Use `get_activity_streams` for detailed info about activites:
+```{r, fig.height = 4, fig.with = 4}
+# get streams for the first activity in my_acts
+strms_data <- get_activity_streams(my_acts, stoken, acts = 1)
+head(strms_data)
+
+# make a plot
+library(ggplot2)
+ggplot(strms_data, aes(x = lng, y = lat, group = id, col = velocity_smooth)) + 
+	geom_path(size = 2) +
+	coord_equal() + 
+	theme_void() +
+	scale_colour_distiller('Speed (km/hr)', palette = 'Spectral')
+```
 
 ### License
 

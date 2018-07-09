@@ -2,27 +2,28 @@
 % Please edit documentation in R/get_heat_map.R
 \name{get_heat_map}
 \alias{get_heat_map}
-\alias{get_heat_map.actframe}
 \alias{get_heat_map.list}
+\alias{get_heat_map.actframe}
 \title{Makes a heat map from your activity data}
 \usage{
 get_heat_map(act_data, ...)
 
 \method{get_heat_map}{list}(act_data, acts = 1, alpha = NULL, f = 0.1,
-  key = NULL, add_elev = FALSE, as_grad = FALSE, size = 0.5,
-  col = "red", expand = 10, maptype = "terrain", source = "google",
-  units = "metric", ...)
+  key = NULL, add_elev = FALSE, as_grad = FALSE, dist = TRUE,
+  distval = 0, size = 0.5, col = "red", expand = 10,
+  maptype = "terrain", source = "google", units = "metric", ...)
 
 \method{get_heat_map}{actframe}(act_data, alpha = NULL, f = 1, key = NULL,
-  add_elev = FALSE, as_grad = FALSE, size = 0.5, col = "red",
-  expand = 10, maptype = "terrain", source = "google", ...)
+  add_elev = FALSE, as_grad = FALSE, dist = TRUE, distval = 0,
+  size = 0.5, col = "red", expand = 10, maptype = "terrain",
+  source = "google", ...)
 }
 \arguments{
-\item{act_data}{an \code{actlist} object returned by \code{\link{get_activity_list}} or a \code{data.frame} returned by \code{\link{compile_activities}}}
+\item{act_data}{an activities list object returned by \code{\link{get_activity_list}} or a \code{data.frame} returned by \code{\link{compile_activities}}}
 
 \item{...}{arguments passed to or from other methods}
 
-\item{acts}{numeric indicating which activities to plot based on index in \code{actlist}, defaults to most recent}
+\item{acts}{numeric indicating which activities to plot based on index in the activities list, defaults to most recent}
 
 \item{alpha}{the opacity of the line desired. A single activity should be 1. Defaults to 0.5}
 
@@ -34,17 +35,21 @@ get_heat_map(act_data, ...)
 
 \item{as_grad}{logical indicating if elevation is plotted as percent gradient, applies only if \code{add_elev = TRUE}}
 
+\item{dist}{logical if distance is plotted along the route with \code{\link[ggrepel]{geom_label_repel}}}
+
+\item{distval}{numeric indicating rounding factor for distance labels which has direct control on label density, see details}
+
 \item{size}{numeric indicating width of activity lines}
 
 \item{col}{chr string indicating either a single color of the activity lines if \code{add_grad = FALSE} or a color palette passed to \code{\link[ggplot2]{scale_fill_distiller}} if \code{add_grad = TRUE}}
 
 \item{expand}{a numeric multiplier for expanding the number of lat/lon points on straight lines.  This can create a smoother elevation gradient if \code{add_grad = TRUE}.  Set \code{expand = 1} to suppress this behavior.}
 
-\item{maptype}{chr string indicating the base mape type, passed to \code{\link[ggmap]{get_map}}}
+\item{maptype}{chr string indicating the base map type relevant for the \code{source}, passed to \code{\link[ggmap]{get_map}}}
 
 \item{source}{chr string indicating map source, passed to \code{\link[ggmap]{get_map}}, currently only \code{"google"} and \code{"osm"} are supported}
 
-\item{units}{chr string indicating plot units as either metric or imperial}
+\item{units}{chr string indicating plot units as either metric or imperial, this has no effect if input data are already compiled with \code{\link{compile_activities}}}
 }
 \value{
 plot of activity on a Google map
@@ -53,12 +58,16 @@ plot of activity on a Google map
 Makes a heat map from your activity data
 }
 \details{
-uses \code{\link{get_all_LatLon}} to produce a dataframe of latitudes and longitudes to use in the map. Uses {ggmap} to produce map and ggplot2 it
+uses \code{\link{get_latlon}} to produce a dataframe of latitudes and longitudes to use in the map. Uses ggmap to produce the map and ggplot2 to plot the route.
+
+The Google API key for elevation is easy to obtain, follow instructions here: https://developers.google.com/maps/documentation/elevation/#api_key
+
+The \code{distval} argument is passed to the \code{digits} argument of \code{round}. This controls the density of the distance labels, e.g., 1 will plot all distances in sequenc of 0.1, 0 will plot all distances in sequence of one, -1 will plot all distances in sequence of 10, etc.
 }
 \examples{
 \dontrun{
 # get my activities
-stoken <- httr::config(ttoken = strava_oauth(app_name, app_client_id, app_secret, cache = TRUE))
+stoken <- httr::config(token = strava_oauth(app_name, app_client_id, app_secret, cache = TRUE))
 my_acts <- get_activity_list(stoken)
 
 # default
@@ -70,7 +79,8 @@ get_heat_map(my_acts, acts = 1, alpha = 1, key = mykey, add_elev = TRUE, col = '
 
 # compile first, change units
 my_acts <- compile_activities(my_acts, acts = 156, units = 'imperial')
-get_heat_map(my_acts, key = mykey, alpha = 1, add_elev = T, col = 'Spectral', size = 2, maptype = 'satellite')
+get_heat_map(my_acts, key = mykey, alpha = 1, add_elev = T, col = 'Spectral', size = 2, 
+  maptype = 'satellite')
 }
 }
 \author{
@@ -79,4 +89,3 @@ Daniel Padfield, Marcus Beck
 \concept{
 token
 }
-

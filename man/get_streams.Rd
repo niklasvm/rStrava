@@ -2,10 +2,10 @@
 % Please edit documentation in R/get_streams.R
 \name{get_streams}
 \alias{get_streams}
-\title{Retrieve a Strava data stream}
+\title{Retrieve a Strava data stream for a single activity}
 \usage{
-get_streams(stoken, id, request = "activities", types, resolution = NULL,
-  series_type = NULL)
+get_streams(stoken, id, request = "activities", types = NULL,
+  resolution = NULL, series_type = NULL)
 }
 \arguments{
 \item{stoken}{A \code{\link[httr]{config}} object created using the \code{\link{strava_oauth}} function}
@@ -24,7 +24,8 @@ get_streams(stoken, id, request = "activities", types, resolution = NULL,
 Data from an API request.
 }
 \description{
-Retrieve a Strava data stream
+Retrieve a Strava data stream for a single activity.
+Internally called by \code{\link{get_activity_streams}}.
 }
 \details{
 Requires authentication stoken using the \code{\link{strava_oauth}} function and a user-created API on the strava website. From the API documentation, 'streams' is the Strava term for the raw data associated with an activity.
@@ -42,4 +43,3 @@ get_streams(stoken, id = 351217692, types = list('distance', 'latlng'))
 \concept{
 token
 }
-

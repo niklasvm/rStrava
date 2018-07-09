@@ -2,4 +2,4 @@ base
 rStrava
 httr
 httpuv
-dplyr
+bindrcpp
